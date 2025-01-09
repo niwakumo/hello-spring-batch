@@ -3,6 +3,9 @@ package com.example.hello.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
+
+import com.example.hello.validator.HelloJobParametersValidator;
+
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
@@ -11,6 +14,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.core.Job;
+import org.springframework.batch.core.JobParametersValidator;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
 
@@ -31,18 +35,27 @@ public class SpringConfig {
         this.transactionManager = transactionManager;
     }
 
+    // バリデーションの設定
+    @Bean
+    public JobParametersValidator jobParametersValidator() {
+        return new HelloJobParametersValidator();
+    }
+
+    // ステップの設定
     @Bean
     public Step helloTaskletStep1() {
         return new StepBuilder("helloTaskletStep1", jobRepository)
-            .tasklet(helloTasklet1, transactionManager)
+            .tasklet(helloTasklet1, transactionManager) // タスクレットの設定
             .build();
     }
 
+    // ジョブの設定
     @Bean
     public Job helloJob() {
         return new JobBuilder("helloJob", jobRepository)
-            .incrementer(new RunIdIncrementer())
-            .start(helloTaskletStep1())
+            .incrementer(new RunIdIncrementer()) // ジョブの実行IDをインクリメント
+            .start(helloTaskletStep1()) // ステップの設定
+            .validator(jobParametersValidator()) // バリデーションの設定
             .build();
 
     }
