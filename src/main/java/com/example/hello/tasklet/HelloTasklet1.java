@@ -3,6 +3,7 @@ package com.example.hello.tasklet;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.step.tasklet.Tasklet;
+import org.springframework.batch.item.ExecutionContext;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -26,6 +27,15 @@ public class HelloTasklet1 implements Tasklet{
         // パラメータの値を確認
         System.out.println("param1= " + param1);
         System.out.println("param2= " + param2);
+
+        // tasklet2に渡す値を設定
+        ExecutionContext jobContext = contribution.getStepExecution()
+                                                    .getJobExecution()
+                                                    .getExecutionContext();
+        // "jobKey1"というキーで値を設定
+        jobContext.put("jobKey1", "givenValue1");
+
+
         return RepeatStatus.FINISHED;
     }
     

@@ -29,6 +29,10 @@ public class SpringConfig {
     @Qualifier("HelloTasklet1")
     private Tasklet helloTasklet1;
 
+    @Autowired
+    @Qualifier("HelloTasklet2")
+    private Tasklet helloTasklet2;
+
     public SpringConfig(JobLauncher jobLauncher, JobRepository jobRepository, PlatformTransactionManager transactionManager) {
         this.jobLauncher = jobLauncher;
         this.jobRepository = jobRepository;
@@ -49,12 +53,20 @@ public class SpringConfig {
             .build();
     }
 
+    @Bean
+    public Step helloTaskletStep2() {
+        return new StepBuilder("helloTaskletStep2", jobRepository)
+            .tasklet(helloTasklet2, transactionManager) // タスクレットの設定
+            .build();
+    }
+
     // ジョブの設定
     @Bean
     public Job helloJob() {
         return new JobBuilder("helloJob", jobRepository)
             .incrementer(new RunIdIncrementer()) // ジョブの実行IDをインクリメント
             .start(helloTaskletStep1()) // ステップの設定
+            .next(helloTaskletStep2()) 
             .validator(jobParametersValidator()) // バリデーションの設定
             .build();
 
