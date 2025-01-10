@@ -17,6 +17,7 @@ import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.core.Job;
+import org.springframework.batch.core.JobExecutionListener;
 import org.springframework.batch.core.JobParametersValidator;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
@@ -46,6 +47,10 @@ public class SpringConfig {
 
     @Autowired
     private ItemWriter<String> helloWriter;
+
+    // listenerの設定
+    @Autowired
+    private JobExecutionListener helloJobExecutionListener;
 
     // コンストラクタ
     public SpringConfig(JobLauncher jobLauncher, JobRepository jobRepository, PlatformTransactionManager transactionManager) {
@@ -91,10 +96,11 @@ public class SpringConfig {
     public Job helloJob() {
         return new JobBuilder("helloJob", jobRepository)
             .incrementer(new RunIdIncrementer()) // ジョブの実行IDをインクリメント
-            .start(helloTaskletStep1()) // ステップの設定
+            .start(helloTaskletStep1()) // タスクレットステップの設定
             .next(helloTaskletStep2()) 
             .next(helloChunkStep()) // チャンクステップの設定
             .validator(jobParametersValidator()) // バリデーションの設定
+            .listener(helloJobExecutionListener) // リスナーの設定
             .build();
 
     }
