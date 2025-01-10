@@ -13,6 +13,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.core.step.tasklet.Tasklet;
+import org.springframework.batch.item.ItemProcessor;
+import org.springframework.batch.item.ItemReader;
+import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobParametersValidator;
 import org.springframework.batch.core.Step;
@@ -25,14 +28,26 @@ public class SpringConfig {
     private final JobRepository jobRepository;
     private final PlatformTransactionManager transactionManager;
 
+    // タスクレットの設定
     @Autowired
-    @Qualifier("HelloTasklet1")
+    @Qualifier("HelloTasklet1") // tasklet1のBean名を指定して区別する
     private Tasklet helloTasklet1;
 
     @Autowired
     @Qualifier("HelloTasklet2")
     private Tasklet helloTasklet2;
 
+    // Chunkの設定
+    @Autowired
+    private ItemReader<String> helloReader;
+
+    @Autowired
+    private ItemProcessor<String, String> helloProcessor;
+
+    @Autowired
+    private ItemWriter<String> helloWriter;
+
+    // コンストラクタ
     public SpringConfig(JobLauncher jobLauncher, JobRepository jobRepository, PlatformTransactionManager transactionManager) {
         this.jobLauncher = jobLauncher;
         this.jobRepository = jobRepository;
@@ -45,7 +60,7 @@ public class SpringConfig {
         return new HelloJobParametersValidator();
     }
 
-    // ステップの設定
+    // ステップの設定(タスクレット)
     @Bean
     public Step helloTaskletStep1() {
         return new StepBuilder("helloTaskletStep1", jobRepository)
@@ -60,6 +75,17 @@ public class SpringConfig {
             .build();
     }
 
+    // ステップの設定(Chunk)
+    @Bean
+    public Step helloChunkStep() {
+        return new StepBuilder("helloChunkStep", jobRepository)
+                    .<String, String>chunk(3, transactionManager) // 第1引数で処理する件数を設定
+                    .reader(helloReader)
+                    .processor(helloProcessor)
+                    .writer(helloWriter)
+                    .build();
+    }
+
     // ジョブの設定
     @Bean
     public Job helloJob() {
@@ -67,6 +93,7 @@ public class SpringConfig {
             .incrementer(new RunIdIncrementer()) // ジョブの実行IDをインクリメント
             .start(helloTaskletStep1()) // ステップの設定
             .next(helloTaskletStep2()) 
+            .next(helloChunkStep()) // チャンクステップの設定
             .validator(jobParametersValidator()) // バリデーションの設定
             .build();
 
